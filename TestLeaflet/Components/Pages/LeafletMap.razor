@@ -1,0 +1,79 @@
+﻿@rendermode InteractiveServer
+
+@inject HttpClient httpClient
+@using Microsoft.JSInterop
+@inject IJSRuntime JsRuntimeMap
+
+<div id="map"></div>
+
+@code {
+    #region property
+    public double[] StartCoordinates { get; set; }
+    public double[] EndCoordinates { get; set; }
+    [Parameter] public string StartCoordinatesAdresse { get; set; }
+    [Parameter] public string EndCoordinatesAdresse { get; set; }
+
+    private IJSObjectReference _jsModule;
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("TestLeaflet"); //your projectName
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _jsModule = await JsRuntimeMap.InvokeAsync<IJSObjectReference>("import", "/js/LeafletMap.js");
+                StartCoordinates = await GetCoordinatesFromAddress(StartCoordinatesAdresse);
+                EndCoordinates = await GetCoordinatesFromAddress(EndCoordinatesAdresse);
+                if (StartCoordinates != null && EndCoordinates != null)
+                {
+                    await _jsModule.InvokeVoidAsync("initializeLeafletMap", StartCoordinates, EndCoordinates);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log.WriteLogException(ex);
+            }
+        }
+    }
+
+    private async Task<double[]> GetCoordinatesFromAddress(string address)
+    {
+        try
+        {
+            string encodedAddress = Uri.EscapeDataString(address);
+            string url = $"https://nominatim.openstreetmap.org/search?format=json&q={encodedAddress}&accept-language=fr";
+
+            var response = await httpClient.GetFromJsonAsync<NominatimResponse[]>(url);
+
+            if (response != null && response.Length > 0)
+            {
+                return new double[] { response[0].lat, response[0].lon };
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log.WriteLogException(ex);
+        }
+        return null;
+    }
+
+    public class NominatimResponse
+    {
+        public double lat { get; set; }
+        public double lon { get; set; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_jsModule != null)
+        {
+            await _jsModule.DisposeAsync();
+        }
+    }
+}

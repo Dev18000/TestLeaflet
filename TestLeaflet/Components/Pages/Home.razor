@@ -1,0 +1,9 @@
+﻿@page "/"
+@rendermode InteractiveServer
+<div class="maps-div">
+    <LeafletMap StartCoordinatesAdresse="@startCoordinates" EndCoordinatesAdresse="@endCoordinates" />
+</div>
+@code {
+    string startCoordinates { get; set; } = "Av. Gustave Eiffel, 75007 Paris";
+    string endCoordinates { get; set; } = "7 bis Boulevard de l'Hôpital 75013 Paris";
+}
