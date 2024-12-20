@@ -9,7 +9,9 @@ export function initializeLeafletMap(startCoordinates, endCoordinates) {
     }).addTo(map);
 
     L.Routing.control({
+        language: 'fr',
         waypoints: [
+          
             L.latLng(startCoordinates),
             L.latLng(endCoordinates)
         ],
